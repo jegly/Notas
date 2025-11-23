@@ -246,12 +246,12 @@ Open an [issue](https://github.com/globalcve/NocturneNotes/issues) with:
 - Your OS and GTK version
 - Steps to reproduce
 - Expected vs actual behavior
-- Relevant logs (no sensitive data!)
+- Relevant logs (no sensitive data!) 
 
 ### Security Issues
 **Don't open public issues for security vulnerabilities!**
 
-Email: [globalcve@gmail.com] or use [GitHub Security Advisories](https://github.com/globalcve/NocturneNotes/security/advisories)
+Email: globalcve@gmail.com or use [GitHub Security Advisories](https://github.com/globalcve/NocturneNotes/security/advisories)
 
 ---
 
@@ -343,7 +343,7 @@ A: Yes. I built this for myself, but I'm sharing it because maybe you need it to
 
 MIT License - See [LICENSE](LICENSE)
 
-**TL;DR:** Do whatever you want with this code. Just don't blame me if something breaks.
+Do whatever you want with this code. Just don't blame me if something breaks.
 
 ---
 
