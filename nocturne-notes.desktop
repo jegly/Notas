@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Nocturne Notes
+Comment=Secure, lightweight, encrypted note-taking application
+Exec=nocturne-notes
+Icon=nocturne-notes
+Terminal=false
+Type=Application
+Categories=Utility;TextEditor;Security;
+Keywords=note;notes;secure;encrypted;gtk;rust;
+StartupNotify=true

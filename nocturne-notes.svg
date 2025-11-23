@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#282a36"/>
+  
+  <!-- Notepad base -->
+  <rect x="140" y="120" width="232" height="300" rx="8" fill="#44475a"/>
+  
+  <!-- Top binding -->
+  <rect x="140" y="120" width="232" height="40" rx="8" fill="#6272a4"/>
+  
+  <!-- Spiral rings -->
+  <circle cx="180" cy="140" r="8" fill="#282a36"/>
+  <circle cx="220" cy="140" r="8" fill="#282a36"/>
+  <circle cx="260" cy="140" r="8" fill="#282a36"/>
+  <circle cx="300" cy="140" r="8" fill="#282a36"/>
+  <circle cx="340" cy="140" r="8" fill="#282a36"/>
+  
+  <!-- Lines on the notepad -->
+  <line x1="160" y1="200" x2="352" y2="200" stroke="#50fa7b" stroke-width="4" stroke-linecap="round"/>
+  <line x1="160" y1="240" x2="352" y2="240" stroke="#50fa7b" stroke-width="4" stroke-linecap="round"/>
+  <line x1="160" y1="280" x2="320" y2="280" stroke="#50fa7b" stroke-width="4" stroke-linecap="round"/>
+  <line x1="160" y1="320" x2="352" y2="320" stroke="#bd93f9" stroke-width="4" stroke-linecap="round"/>
+  <line x1="160" y1="360" x2="280" y2="360" stroke="#bd93f9" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Pen overlay -->
+  <g transform="translate(320, 320) rotate(-45)">
+    <!-- Pen body -->
+    <rect x="0" y="-6" width="60" height="12" rx="2" fill="#ff79c6"/>
+    <!-- Pen tip -->
+    <polygon points="60,-6 70,0 60,6" fill="#f8f8f2"/>
+    <!-- Pen clip -->
+    <rect x="10" y="-8" width="3" height="16" rx="1.5" fill="#f8f8f2"/>
+  </g>
+  
+  <!-- Outer ring for polish -->
+  <circle cx="256" cy="256" r="240" fill="none" stroke="#6272a4" stroke-width="8"/>
+</svg>

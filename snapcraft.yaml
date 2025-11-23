@@ -1,0 +1,35 @@
+name: nocturne-notes
+base: core22
+version: '0.1.0'
+summary: Secure, lightweight, encrypted note-taking application.
+description: |
+  Nocturne Notes is a minimalist, secure note-taking application for Linux.
+  It is built with Rust and GTK, featuring AES-256 encryption and password
+  protection at startup.
+
+grade: stable
+confinement: strict
+
+apps:
+  nocturne-notes:
+    command: desktop-launch $SNAP/bin/nocturne_notes
+    extensions: [gnome]
+    plugs:
+      - home
+      - network
+      - unity7
+      - wayland
+      - x11
+
+parts:
+  nocturne-notes:
+    plugin: rust
+    source: .
+    build-packages:
+      - libgtk-4-dev
+      - libadwaita-1-dev
+      - libssl-dev
+    stage-packages:
+      - libgtk-4-1
+      - libadwaita-1-0
+      - libssl3
