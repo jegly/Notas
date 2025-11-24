@@ -336,6 +336,9 @@ A: Not officially, but GTK4 is cross-platform. If you want to package it for oth
 **Q: Is this a 1-person project?**  
 A: Yes. I built this for myself, but I'm sharing it because maybe you need it too. Contributions are welcome if you want to help improve it!
 
+Note: Rust crates use underscores internally (`nocturne_notes`), 
+but the binary and package name use hyphens (`nocturne-notes`).
+
 ---
 
 ## 📄 License
