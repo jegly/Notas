@@ -23,12 +23,12 @@ cp nocturne-notes.svg $PKGDIR/usr/share/icons/hicolor/scalable/apps/nocturne-not
 # Write control file
 cat > $PKGDIR/DEBIAN/control <<EOF
 Package: nocturne-notes
-Version: 1.0.0
+Version: 1.5.0
 Section: utils
 Priority: optional
 Architecture: amd64
 Depends: libc6, libgtk-4-1
-Maintainer: JEGLY globalcve@gmail.com
+Maintainer: JEGLY <globalcve@gmail.com>
 Description: Secure GTK4 note-taking app written in Rust
  A simple, secure note-taking application with a Rust backend and GTK4 frontend.
 EOF
@@ -42,4 +42,3 @@ echo "Package built: ${PKGDIR}.deb"
 # chmod +x build.sh
 # ./build.sh
 # sudo apt install ./nocturne-notes-deb.deb
-
