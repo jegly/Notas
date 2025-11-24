@@ -1,7 +1,7 @@
 use std::{fs, path::PathBuf};
 use anyhow::{Result, anyhow};
 use aes_gcm::Key;
-use dirs::config_dir;
+use dirs::data_dir;
 use once_cell::sync::OnceCell;
 
 use super::{
@@ -19,8 +19,9 @@ pub struct CoreManager {
 
 impl CoreManager {
     pub fn new() -> Result<Self> {
-        let config_dir = config_dir().ok_or_else(|| anyhow!("Could not find config directory"))?;
-        let app_dir = config_dir.join("nocturne_notes");
+        // Use XDG data directory for user data
+        let data_dir = data_dir().ok_or_else(|| anyhow!("Could not find data directory"))?;
+        let app_dir = data_dir.join("nocturne_notes");
         fs::create_dir_all(&app_dir)?;
         let data_path = app_dir.join("notes.dat");
 
@@ -107,7 +108,7 @@ impl CoreManager {
         }
     }
 
-      pub fn export_note_text(&self, id: u64) -> Result<String> {
+    pub fn export_note_text(&self, id: u64) -> Result<String> {
         let note = self.note_list.notes.iter().find(|n| n.id == id)
             .ok_or_else(|| anyhow!("Note not found"))?;
         
@@ -118,13 +119,8 @@ impl CoreManager {
         let key = CRYPTO_KEY.get().ok_or_else(|| anyhow!("Application is locked"))?;
         let salt = CRYPTO_SALT.get().ok_or_else(|| anyhow!("Application salt not set"))?;
 
-        // 1. Serialize the note list
         let serialized = bincode::serialize(&self.note_list)?;
-
-        // 2. Encrypt the serialized data
         let encrypted = crypto::encrypt(key, salt, &serialized)?;
-
-        // 3. Write to the specified export path
         fs::write(export_path, encrypted.to_bytes())?;
 
         Ok(())
@@ -133,27 +129,18 @@ impl CoreManager {
     pub fn import_encrypted(&mut self, import_path: &PathBuf, master_password: MasterPassword) -> Result<()> {
         let password_bytes = &master_password.0;
         
-        // 1. Read the encrypted file
         let encrypted_data = fs::read(import_path).map_err(|e| anyhow!("Failed to read import file: {}", e))?;
         let encrypted_data = EncryptedData::from_bytes(&encrypted_data)?;
 
-        // 2. Derive the key using the salt from the import file
         let key = crypto::derive_key(password_bytes, &encrypted_data.header.salt)?;
-        
-        // 3. Attempt to decrypt the data
         let decrypted_bytes = crypto::decrypt(&key, &encrypted_data)?;
-
-        // 4. Deserialize the note list
         let imported_note_list: NoteList = bincode::deserialize(&decrypted_bytes)?;
 
-        // 5. Merge imported notes with current notes
         for note in imported_note_list.notes {
             self.note_list.add_note(note);
         }
         
-        // 6. Save the merged list
         self.save_notes()?;
-
         Ok(())
     }
 }
@@ -166,5 +153,3 @@ impl Drop for CoreManager {
         }
     }
 }
-
-
