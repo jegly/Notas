@@ -1,6 +1,4 @@
-<p align="center">
-<img src="https://github.com/globalcve/NocturneNotes/blob/main/NocturneNotesBanner.png" alt="Nocturne Notes Banner" width="600"/>
-</p>
+
 
 <p align="center">
 <img src="https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white" alt="Rust Badge"/>
@@ -12,7 +10,7 @@
 
 ## 📝 About
 
-**Nocturne Notes** is a lightweight, encrypted note-taking app for Linux. 
+**Notas** is a lightweight, encrypted note-taking app for Linux. 
 
 I built this because I couldn't find a decent note app that checked all the boxes:
 - ✅ Actually runs on Linux (not just "technically supported")
