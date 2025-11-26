@@ -11,6 +11,9 @@
 </p>
 
 ---
+**Coming Soon**
+
+
 
  Notas is a minimalist, secure note-taking application for Linux.
   It is built with Rust and GTK, featuring AES-256 encryption and password
