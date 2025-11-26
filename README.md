@@ -1,4 +1,8 @@
-
+<p align="center">
+  <img src="https://raw.githubusercontent.com/globalcve/Notas/main/Notas-Animated.gif" 
+       alt="Notas Cube Animation" 
+       style="width: 150px; height: 100px;">
+</p>
 
 <p align="center">
 <img src="https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white" alt="Rust Badge"/>
