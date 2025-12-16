@@ -36,6 +36,7 @@ A minimalist, pretty secure note-taking application for Linux. Built with Rust a
 - **Auto-lock** after configurable timeout
 - **Clipboard auto-clear** after copying sensitive content
 - All data encrypted locally — nothing leaves your device
+- No ads / No tracking / no internet connectivity 
 
 ## Install
 
