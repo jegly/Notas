@@ -26,7 +26,16 @@
 
 ---
 
-A minimalist, secure note-taking application for Linux. Built with Rust and GTK4, featuring AES-256 encryption and password protection at startup.
+A minimalist, pretty secure note-taking application for Linux. Built with Rust and GTK4, featuring AES-256 encryption and password protection at startup.
+
+
+## Security
+
+- **AES-256-GCM** encryption for all notes
+- **Argon2id** key derivation (memory-hard, resistant to GPU attacks)
+- **Auto-lock** after configurable timeout
+- **Clipboard auto-clear** after copying sensitive content
+- All data encrypted locally — nothing leaves your device
 
 ## Install
 
@@ -42,13 +51,6 @@ Notas uses the DotGothic16 font. To install it:
 ./download-font.sh
 ```
 
-## Security
-
-- **AES-256-GCM** encryption for all notes
-- **Argon2id** key derivation (memory-hard, resistant to GPU attacks)
-- **Auto-lock** after configurable timeout
-- **Clipboard auto-clear** after copying sensitive content
-- All data encrypted locally — nothing leaves your device
 
 ## Uninstall
 
