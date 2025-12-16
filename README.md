@@ -51,6 +51,9 @@ Notas uses the DotGothic16 font. To install it:
 ./download-font.sh
 ```
 
+## Icon Dock Fix
+
+https://github.com/jegly/Notas/blob/main/icon-dock-fix
 
 ## Uninstall
 
