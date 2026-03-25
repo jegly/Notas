@@ -47,9 +47,14 @@ sudo apt install pkg-config libgtk-4-dev libadwaita-1-dev
 ## Security
 
 - **AES-256-GCM** encryption for all notes
-- **Argon2id** key derivation (memory-hard, resistant to GPU attacks)
+- **Argon2id** key derivation — memory-hard, resistant to GPU and brute-force attacks
+- **Unique salt per vault** — every installation has a cryptographically random salt
+- **Fresh nonce per save** — every write uses a new random nonce, no nonce reuse
+- **In-memory zeroization** — decrypted note content is wiped from memory when the app locks
+- **mlock protection** — sensitive key material is locked in RAM, preventing it from being swapped to disk
 - **Auto-lock** after configurable timeout
 - **Clipboard auto-clear** after copying sensitive content
+- **Clean uninstall** — vault and config are wiped on removal so no data lingers
 - All data encrypted locally — nothing leaves your device
 - No ads / no tracking / no internet connectivity
 
