@@ -38,7 +38,7 @@ The DotGothic16 font is bundled and installed automatically.
 
 Requirements:
 ```bash
-sudo apt install pkg-config libgtk-4-dev libadwaita-1-dev
+sudo apt install pkg-config libgtk-4-dev libadwaita-1-dev rustup
 ```
 ```bash
 ./build-deb.sh
