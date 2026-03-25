@@ -1,5 +1,4 @@
 # Notas
-
 <p align="center">
 <img src="assets/Notas-Animated.gif" alt="Notas Animation" />
 </p>
@@ -26,8 +25,24 @@
 
 ---
 
-A minimalist, pretty secure note-taking application for Linux. Built with Rust and GTK4, featuring AES-256 encryption and password protection at startup.
+A minimalist, secure note-taking application for Linux. Built with Rust and GTK4, featuring AES-256 encryption and password protection at startup.
 
+## Install
+```bash
+sudo dpkg -i notas_2.1.0_amd64.deb
+```
+
+The DotGothic16 font is bundled and installed automatically.
+
+## Build from source
+
+Requirements:
+```bash
+sudo apt install pkg-config libgtk-4-dev libadwaita-1-dev
+```
+```bash
+./build-deb.sh
+```
 
 ## Security
 
@@ -36,31 +51,14 @@ A minimalist, pretty secure note-taking application for Linux. Built with Rust a
 - **Auto-lock** after configurable timeout
 - **Clipboard auto-clear** after copying sensitive content
 - All data encrypted locally — nothing leaves your device
-- No ads / No tracking / no internet connectivity 
-
-## Install
-
-```bash
-sudo dpkg -i notas_1.0.0_amd64.deb
-```
-
-## Font
-
-Notas uses the DotGothic16 font. To install it:
-
-```bash
-./download-font.sh
-```
-
-## Icon Dock Fix
-
-https://github.com/jegly/Notas/blob/main/icon-dock-fix
+- No ads / no tracking / no internet connectivity
 
 ## Uninstall
-
 ```bash
 sudo apt remove notas
 ```
+
+User data is removed automatically on uninstall so a reinstall always starts clean.
 
 ## License
 
