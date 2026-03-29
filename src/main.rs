@@ -1118,6 +1118,10 @@ fn show_main_window(app: &Application) {
     // Set to true just before select_row on a newly created note so the
     // row_selected handler doesn't overwrite the blank title entry with "Untitled".
     let skip_next_load: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+    // Set to true whenever we programmatically clear the editor (new note, delete,
+    // row selection) so connect_changed doesn't mistake it for the user typing and
+    // spawn a phantom "Untitled" note.
+    let suppress_auto_create: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
 
     let refresh_note_list = {
         let note_list_box = note_list_box.clone();
@@ -1240,8 +1244,13 @@ fn show_main_window(app: &Application) {
         let status_label = status_label.clone();
         let note_list_box = note_list_box.clone();
         let skip_next_load = skip_next_load.clone();
+        let suppress_auto_create = suppress_auto_create.clone();
         let refresh = refresh_note_list.clone();
         move || {
+            // Don't fire if we're programmatically clearing the editor
+            if *suppress_auto_create.lock().unwrap() {
+                return;
+            }
             // Only fire if there is no active note
             if active_note_id.lock().unwrap().is_some() {
                 return;
@@ -1296,7 +1305,8 @@ fn show_main_window(app: &Application) {
 
     note_list_box.connect_row_selected(glib::clone!(@strong manager_rc, @strong title_entry, 
         @strong content_buffer, @strong delete_button, @strong save_button, @strong copy_button, 
-        @strong active_note_id, @strong status_label, @strong row_ids, @strong skip_next_load => move |_, row_opt| {
+        @strong active_note_id, @strong status_label, @strong row_ids, @strong skip_next_load,
+        @strong suppress_auto_create => move |_, row_opt| {
         if let Some(row) = row_opt {
             let idx = row.index();
             if idx >= 0 {
@@ -1305,13 +1315,10 @@ fn show_main_window(app: &Application) {
                     let skip = {
                         let mut guard = skip_next_load.lock().unwrap();
                         let val = *guard;
-                        *guard = false; // always consume the flag
+                        *guard = false;
                         val
                     };
                     if skip {
-                        // Fresh note just created — the entry is already blank and
-                        // active_note_id was set in the creation callback. Just
-                        // enable the buttons without clobbering what the user types.
                         *active_note_id.lock().unwrap() = Some(id);
                         delete_button.set_sensitive(true);
                         save_button.set_sensitive(true);
@@ -1320,8 +1327,10 @@ fn show_main_window(app: &Application) {
                     } else {
                         let note_opt = manager_rc.lock().unwrap().get_notes().into_iter().find(|n| n.id == id);
                         if let Some(note) = note_opt {
+                            *suppress_auto_create.lock().unwrap() = true;
                             title_entry.set_text(&note.title);
                             content_buffer.set_text(&note.content);
+                            *suppress_auto_create.lock().unwrap() = false;
                             *active_note_id.lock().unwrap() = Some(id);
                             delete_button.set_sensitive(true);
                             save_button.set_sensitive(true);
@@ -1387,10 +1396,15 @@ fn show_main_window(app: &Application) {
     let refresh_clone = refresh_note_list.clone();
     new_note_button.connect_clicked(glib::clone!(@strong manager_rc, @strong title_entry, 
         @strong content_buffer, @strong active_note_id, @strong delete_button, @strong save_button, 
-        @strong copy_button, @strong note_list_box, @strong status_label, @strong skip_next_load => move |_| {
+        @strong copy_button, @strong note_list_box, @strong status_label, @strong skip_next_load,
+        @strong suppress_auto_create => move |_| {
         
+        // Suppress connect_changed during programmatic clear so no phantom note is created
+        *suppress_auto_create.lock().unwrap() = true;
         title_entry.set_text("");
         content_buffer.set_text("");
+        *suppress_auto_create.lock().unwrap() = false;
+
         *active_note_id.lock().unwrap() = None;
         delete_button.set_sensitive(false);
         save_button.set_sensitive(false);
@@ -1495,6 +1509,7 @@ fn show_main_window(app: &Application) {
         let copy_button = copy_button.clone();
         let status_label = status_label.clone();
         let refresh_clone = refresh_clone.clone();
+        let suppress_auto_create = suppress_auto_create.clone();
         
         move || {
             let id_opt = *active_note_id.lock().unwrap();
@@ -1508,6 +1523,7 @@ fn show_main_window(app: &Application) {
                 let save_clone = save_button.clone();
                 let copy_clone = copy_button.clone();
                 let refresh = refresh_clone.clone();
+                let suppress_clone = suppress_auto_create.clone();
 
                 status_label.set_text("Deleting...");
                 delete_button.set_sensitive(false);
@@ -1529,8 +1545,10 @@ fn show_main_window(app: &Application) {
                         match result {
                             Ok(Ok(_)) => {
                                 status_clone.set_text("Deleted");
+                                *suppress_clone.lock().unwrap() = true;
                                 title_clone.set_text("");
                                 content_clone.set_text("");
+                                *suppress_clone.lock().unwrap() = false;
                                 *active_clone.lock().unwrap() = None;
                                 delete_clone.set_sensitive(false);
                                 save_clone.set_sensitive(false);
