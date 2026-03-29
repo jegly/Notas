@@ -6,9 +6,22 @@ VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
 PACKAGE="notas"
 ARCH="amd64"  # Change to arm64 if needed
 
-echo "╔══════════════════════════════════════════╗"
-echo "║       Notas .deb Package Builder         ║"
-echo "╚══════════════════════════════════════════╝"
+echo "╔════════════════════════════════════════════════════════════════════════════╗"
+echo "║                                                                            ║"
+echo "║   _   _       _                   _      _                                ║"
+echo "║  | \ | | ___ | |_ __ _ ___     __| | ___| |__                            ║"
+echo "║  |  \| |/ _ \| __/ _\` / __|   / _\` |/ _ \ '_ \                          ║"
+echo "║  | |\  | (_) | || (_| \__ \  | (_| |  __/ |_) |                          ║"
+echo "║  |_| \_|\___/ \__\__,_|___/ (_)__,_|\___|_.__/                           ║"
+echo "║                                                                            ║"
+echo "║  ____            _                      ____        _ _     _             ║"
+echo "║ |  _ \ __ _  ___| | ____ _  __ _  ___  | __ ) _   _(_) | __| | ___ _ __ ║"
+echo "║ | |_) / _\` |/ __| |/ / _\` |/ _\` |/ _ \ |  _ \| | | | | |/ _\` |/ _ \ '__| ║"
+echo "║ |  __/ (_| | (__|   < (_| | (_| |  __/ | |_) | |_| | | | (_| |  __/ |   ║"
+echo "║ |_|   \__,_|\___|_|\_\__,_|\__, |\___| |____/ \__,_|_|_|\__,_|\___|_|   ║"
+echo "║                            |___/                                          ║"
+echo "║                                                                            ║"
+echo "╚════════════════════════════════════════════════════════════════════════════╝"
 
 # ── Dependency checks ────────────────────────────────────────────────────────
 MISSING_APT=()
@@ -140,7 +153,7 @@ Priority: optional
 Architecture: ${ARCH}
 Installed-Size: ${INSTALLED_SIZE}
 Depends: libgtk-4-1, libadwaita-1-0
-Maintainer: Jegly <jegly@example.com>
+Maintainer: Jegly <jjjegly@gmail.com>
 Homepage: https://github.com/jegly/notas
 Description: Secure encrypted notes application
  Notas is a privacy-focused encrypted notes application built with
