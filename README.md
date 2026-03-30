@@ -41,7 +41,7 @@
 ## INSTALL
 
 ```bash
-sudo dpkg -i notas_2.1.0_amd64.deb
+sudo dpkg -i notas_3.0.0_amd64.deb 
 ```
 
 ```
