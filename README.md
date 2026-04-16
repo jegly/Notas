@@ -137,3 +137,5 @@ sudo apt remove notas
 │  OTHER LIABILITY ARISING FROM USE OF THE SOFTWARE.                     │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
+
+![GitHub all releases](https://img.shields.io/github/downloads/jegly/Notas/total)
