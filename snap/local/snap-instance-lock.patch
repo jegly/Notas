@@ -1,0 +1,62 @@
+diff --git a/src/main.rs b/src/main.rs
+index f2fe794..347a4e1 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -229,6 +229,32 @@ fn register_bundled_font() {
+     }
+ }
+ 
++/// Inside a strict snap Notas can't own its D-Bus name (that needs a dbus slot,
++/// which the Snap Store holds for manual review), so GApplication's
++/// single-instance guarantee is gone. Recreate it with an exclusive lock in the
++/// data dir — a second copy would otherwise load, then overwrite, the first
++/// one's notes. Returns false if another instance already holds the lock.
++fn acquire_snap_instance_lock() -> bool {
++    use std::os::unix::io::AsRawFd;
++    let Some(dir) = dirs::data_dir().map(|d| d.join("notas")) else { return true };
++    if std::fs::create_dir_all(&dir).is_err() {
++        return true;
++    }
++    let Ok(file) = std::fs::OpenOptions::new()
++        .create(true)
++        .write(true)
++        .open(dir.join("instance.lock"))
++    else {
++        return true;
++    };
++    if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
++        return false;
++    }
++    // Held for the life of the process; the kernel drops it with the fd.
++    std::mem::forget(file);
++    true
++}
++
+ fn main() -> glib::ExitCode {
+     // Lock other same-user processes out of our memory, drop the ability to
+     // dump core, and install the seccomp filter — all before any secret
+@@ -239,6 +265,12 @@ fn main() -> glib::ExitCode {
+     // Register the bundled DotGothic16 font before anything touches Pango.
+     register_bundled_font();
+ 
++    let in_snap = std::env::var_os("SNAP").is_some();
++    if in_snap && !acquire_snap_instance_lock() {
++        eprintln!("Notas is already running.");
++        return glib::ExitCode::FAILURE;
++    }
++
+     let runtime = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime");
+     if TOKIO_RUNTIME.set(runtime).is_err() {
+         eprintln!("Failed to set tokio runtime");
+@@ -272,6 +304,11 @@ fn main() -> glib::ExitCode {
+ 
+     let application = Application::builder()
+         .application_id(APP_ID)
++        .flags(if in_snap {
++            gtk::gio::ApplicationFlags::NON_UNIQUE
++        } else {
++            gtk::gio::ApplicationFlags::default()
++        })
+         .build();
+ 
+     application.connect_startup(|_| {

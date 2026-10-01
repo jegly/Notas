@@ -1,0 +1,98 @@
+name: notas
+title: Notas
+base: core26
+version: '3.2.1'
+summary: Minimalist encrypted notes — offline, no ads, no tracking
+description: |
+  **Notas** is a minimalist, secure note-taking app for Linux, built with Rust
+  and GTK4.
+
+  Notes are encrypted with Tesseract, a three-cipher cascade with Argon2id key
+  derivation. Nothing leaves your device: Notas makes no network connections,
+  and this snap doesn't even request network access.
+
+  * Encrypted notes with auto-lock and automatic clipboard clearing
+  * Hardened process: no core dumps, memory unreadable by other apps, and a
+    seccomp filter that blocks network sockets and running other programs
+  * Dark and light themes, glass mode, and customizable editor fonts
+  * Secure import and export
+license: MIT
+website: https://github.com/jegly/Notas
+source-code: https://github.com/jegly/Notas
+issues: https://github.com/jegly/Notas/issues
+contact: https://github.com/jegly/Notas/issues
+icon: icons/hicolor/256x256/apps/notas.png
+grade: stable
+confinement: strict
+
+platforms:
+  amd64:
+
+# Built on the host in destructive mode, which needs base == host release
+# (26.04). snapcraft's gnome extension doesn't support core26 yet, so the GTK
+# stack is staged below and wired up by snap/local/notas-launch.
+
+apps:
+  notas:
+    command: bin/notas-launch
+    desktop: usr/share/applications/notas.desktop
+    common-id: com.jegly.Notas
+    extensions: [gpu]
+    plugs:
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - opengl
+      - unity7       # tray icon (StatusNotifierItem)
+      - gsettings
+      - home         # import / export
+    # No network plug: Notas never goes online.
+
+parts:
+  notas:
+    plugin: rust
+    source: .
+    build-packages:
+      - libgtk-4-dev
+      - libadwaita-1-dev
+      - pkg-config
+    stage-packages:
+      - libgtk-4-1
+      - libadwaita-1-0
+      - librsvg2-common
+      - adwaita-icon-theme
+      - dconf-gsettings-backend
+      - fontconfig-config
+      - xkb-data      # libxkbcommon keymaps; GTK segfaults without them
+    # Snap-only: keeps src/ identical to upstream. Patches the part's build
+    # copy, never the repo.
+    override-build: |
+      patch -p1 < "$CRAFT_PROJECT_DIR/snap/local/snap-instance-lock.patch"
+      craftctl default
+      install -Dm644 notas.desktop "$CRAFT_PART_INSTALL/usr/share/applications/notas.desktop"
+      sed -i 's|^Icon=.*|Icon=${SNAP}/meta/gui/icon.png|' \
+        "$CRAFT_PART_INSTALL/usr/share/applications/notas.desktop"
+
+  runtime:
+    after: [notas]
+    plugin: dump
+    source: snap/local
+    organize:
+      notas-launch: bin/notas-launch
+    build-packages:
+      - libglib2.0-bin
+      - libgdk-pixbuf2.0-bin
+    override-prime: |
+      craftctl default
+      # GTK aborts without compiled schemas; snap has no post-install hook for it.
+      glib-compile-schemas "$CRAFT_PRIME/usr/share/glib-2.0/schemas"
+      # Pixbuf loader cache holds absolute paths — generate against the primed
+      # loaders, then point it at the installed location.
+      LOADERS="usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/gdk-pixbuf-2.0/2.10.0"
+      if [ -d "$CRAFT_PRIME/$LOADERS/loaders" ]; then
+        GDK_PIXBUF_MODULEDIR="$CRAFT_PRIME/$LOADERS/loaders" \
+          "/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders" \
+          | sed "s|$CRAFT_PRIME|/snap/$CRAFT_PROJECT_NAME/current|g" \
+          > "$CRAFT_PRIME/$LOADERS/loaders.cache"
+      fi

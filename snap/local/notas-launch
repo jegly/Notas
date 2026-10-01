@@ -1,0 +1,26 @@
+#!/bin/sh
+# Notas snap launcher. core26 has no gnome extension yet, so this does the
+# runtime wiring it would normally provide (libs, schemas, icons, Wayland).
+#
+# It must exec notas directly: Notas' seccomp filter blocks execve, so nothing
+# after it can spawn a process.
+
+TRIPLET=x86_64-linux-gnu
+LIBDIR="$SNAP/usr/lib/$TRIPLET"
+
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$LIBDIR:$SNAP/lib/$TRIPLET"
+export XDG_DATA_DIRS="$SNAP/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+export GSETTINGS_SCHEMA_DIR="$SNAP/usr/share/glib-2.0/schemas"
+export GIO_MODULE_DIR="$LIBDIR/gio/modules"
+export GDK_PIXBUF_MODULE_FILE="$LIBDIR/gdk-pixbuf-2.0/2.10.0/loaders.cache"
+export FONTCONFIG_PATH="$SNAP/etc/fonts"
+export XKB_CONFIG_ROOT="$SNAP/usr/share/X11/xkb"
+
+# snapd points XDG_RUNTIME_DIR at a per-snap dir it doesn't always create.
+mkdir -p "$XDG_RUNTIME_DIR" && chmod 0700 "$XDG_RUNTIME_DIR"
+if [ -n "$WAYLAND_DISPLAY" ] && [ ! -e "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ] \
+   && [ -e "$XDG_RUNTIME_DIR/../$WAYLAND_DISPLAY" ]; then
+    ln -sf "../$WAYLAND_DISPLAY" "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY"
+fi
+
+exec "$SNAP/bin/notas" "$@"

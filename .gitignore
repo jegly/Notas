@@ -23,3 +23,9 @@ Thumbs.db
 
 # Internal dev notes — not for publish
 HANDOFF_CLAUDE.md
+
+# snapcraft
+*.snap
+parts/
+stage/
+prime/
