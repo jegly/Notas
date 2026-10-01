@@ -4,6 +4,10 @@
 <img src="assets/Notas-Animated.gif" alt="Notas Animation" />
 </p>
 
+<p align="center">
+<a href="https://snapcraft.io/notas"><img src="https://snapcraft.io/static/images/badges/en/snap-store-black.svg" alt="Get it from the Snap Store" height="56" /></a>
+</p>
+
 ---
 
 <p align="center">
@@ -41,6 +45,14 @@
 sha256:5266070a1926a86ed3e6647c2f43dca209af2261b90e29da61e67a28c8d3a048
 
 ## INSTALL
+
+### Snap Store
+
+```bash
+sudo snap install notas
+```
+
+### Debian package
 
 ```bash
 sudo dpkg -i notas_3.2.1_amd64.deb 
@@ -104,7 +116,8 @@ sudo apt install pkg-config libgtk-4-dev libadwaita-1-dev rustup
 ## UNINSTALL
 
 ```bash
-sudo apt remove notas
+sudo apt remove notas      # .deb
+sudo snap remove notas     # snap
 ```
 
 ```
