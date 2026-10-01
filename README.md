@@ -11,15 +11,13 @@
 ---
 
 <p align="center">
-<img src="assets/Welcome_Screen_Dark.png" alt="Welcome Dark" width="45%"/>
-<img src="assets/Welcome_Screen_White.png" alt="Welcome White" width="45%"/>
+<img src="assets/Unlock_Screen.png" alt="Unlock screen" width="40%"/>
 </p>
 
 ---
 
 <p align="center">
-<img src="assets/Darkmode.png" alt="Dark Mode" width="70%"/>
-<img src="assets/Lightmode.png" alt="Light Mode" width="70%"/>
+<img src="assets/Notes_View.webp" alt="Notes view" width="80%"/>
 </p>
 
 <p align="center">
