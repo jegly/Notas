@@ -40,7 +40,6 @@
 ```
 
 ---
-sha256:5266070a1926a86ed3e6647c2f43dca209af2261b90e29da61e67a28c8d3a048
 
 ## INSTALL
 
@@ -50,11 +49,15 @@ sha256:5266070a1926a86ed3e6647c2f43dca209af2261b90e29da61e67a28c8d3a048
 sudo snap install notas
 ```
 
+`notas_3.2.1_amd64.snap` sha256: `cb5f2797cf17bddc2cf1422e964141ba3949a3740e080345942f080ff4b316ec`
+
 ### Debian package
 
 ```bash
 sudo dpkg -i notas_3.2.1_amd64.deb 
 ```
+
+`notas_3.2.1_amd64.deb` sha256: `5266070a1926a86ed3e6647c2f43dca209af2261b90e29da61e67a28c8d3a048`
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
