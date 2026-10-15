@@ -60,7 +60,7 @@ rand = "0.9"
 tesseract-core = { path = "vendor/tesseract-core" }
 # toolkit.py text operations (encoders / hashes) for the editor right-click menu —
 # native, pure-Rust, offline (no Python / no runtime deps).
-base64 = "0.22"
+base64 = "0.23"
 hex = "0.4"
 sha2 = "0.11"
 sha1 = "0.11"
