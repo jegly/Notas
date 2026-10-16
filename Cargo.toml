@@ -64,7 +64,7 @@ base64 = "0.23"
 hex = "0.4"
 sha2 = "0.11"
 sha1 = "0.11"
-md-5 = "0.10"
+md-5 = "0.11"
 crc32fast = "1.4"
 # Utilities
 chrono = { version = "0.4", features = ["serde"] }
