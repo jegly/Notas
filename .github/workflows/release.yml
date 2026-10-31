@@ -3,8 +3,8 @@
 # unless every step passes (tests included). Afterwards the new version and
 # checksum are committed to main (Cargo.toml, Cargo.lock and README.md).
 #
-# Ubuntu 24.04 on purpose: the .deb declares no glibc minimum, so the build
-# system decides where the binary runs. Built on 24.04 it runs on 24.04+.
+# Built inside the latest Ubuntu (ubuntu:latest): the .deb's library minimums
+# come from the build system (dpkg-shlibdeps), so they track the newest release.
 name: Release
 
 on:
@@ -32,21 +32,49 @@ env:
   DEB_GLOB: notas_*_amd64.deb
   # Any versioned .deb filename in README.md, rewritten to the new one.
   DEB_NAME_REGEX: 'notas_[0-9][0-9.]*_amd64\.deb'
-  CARGO_TERM_COLOR: always
 
 jobs:
   release:
     name: Build, attest and publish .deb
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    container: ubuntu:latest
+    defaults:
+      run:
+        # Container jobs default to sh; the steps use bash.
+        shell: bash
+    timeout-minutes: 60
     env:
       GH_TOKEN: ${{ github.token }}
       INPUT_VERSION: ${{ inputs.version }}
       INPUT_NOTES: ${{ inputs.notes }}
     steps:
+      - name: Install build tools
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update -qq
+          apt-get install -y --no-install-recommends \
+            ca-certificates curl git gh python3 build-essential pkg-config dpkg-dev binutils \
+            libgtk-4-dev libadwaita-1-dev
+          # Latest stable Rust.
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # tags are needed to work out the version
+
+      - name: Trust the checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-ubuntu-latest-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cargo-ubuntu-latest-
 
       - name: Work out version
         id: ver
@@ -87,23 +115,6 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "Releasing **v$version**. Previous release: ${last_raw:-none}" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Install build tools
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            dpkg-dev pkg-config libgtk-4-dev libadwaita-1-dev
-          rustup update stable --no-self-update
-          rustup default stable
-
-      - uses: actions/cache@v6
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: cargo-24.04-${{ hashFiles('Cargo.lock') }}
-          restore-keys: cargo-24.04-
-
       - name: Build .deb
         env:
           VERSION: ${{ steps.ver.outputs.version }}
@@ -121,21 +132,23 @@ jobs:
           shopt -s nullglob
           debs=($DEB_GLOB)
           [[ ${#debs[@]} -eq 1 ]] || { echo "::error::Expected one .deb, found: ${debs[*]}"; exit 1; }
-          sha256sum "${debs[0]}" > SHA256SUMS
+          (cd "$(dirname "${debs[0]}")" && sha256sum "$(basename "${debs[0]}")") > SHA256SUMS
           cat SHA256SUMS
-          echo "deb=${debs[0]}" >> "$GITHUB_OUTPUT"
+          echo "path=${debs[0]}" >> "$GITHUB_OUTPUT"
+          echo "deb=$(basename "${debs[0]}")" >> "$GITHUB_OUTPUT"
           echo "sha=$(cut -d' ' -f1 SHA256SUMS)" >> "$GITHUB_OUTPUT"
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4
         with:
-          subject-path: ${{ steps.sum.outputs.deb }}
+          subject-path: ${{ steps.sum.outputs.path }}
 
       - name: Publish release
         env:
           VERSION: ${{ steps.ver.outputs.version }}
           LAST_TAG: ${{ steps.ver.outputs.last_tag }}
           DEB: ${{ steps.sum.outputs.deb }}
+          DEB_PATH: ${{ steps.sum.outputs.path }}
           SHA: ${{ steps.sum.outputs.sha }}
         run: |
           args=(-f tag_name="v$VERSION" -f target_commitish="$GITHUB_SHA")
@@ -153,7 +166,7 @@ jobs:
           # release is complete the moment it goes public.
           git tag "v$VERSION" "$GITHUB_SHA"
           git push origin "refs/tags/v$VERSION"
-          if ! gh release create "v$VERSION" "$DEB" SHA256SUMS --draft --verify-tag \
+          if ! gh release create "v$VERSION" "$DEB_PATH" SHA256SUMS --draft --verify-tag \
               --title "v$VERSION" --notes-file notes.md; then
             git push --delete origin "refs/tags/v$VERSION"
             exit 1
