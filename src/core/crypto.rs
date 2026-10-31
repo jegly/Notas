@@ -159,3 +159,61 @@ pub fn generate_test_key_with_params(password: &[u8], argon2_params: &Argon2Para
     Ok((key, salt))
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // AES-256-GCM vector generated independently of RustCrypto (Python
+    // `cryptography`, i.e. OpenSSL): key 00..1f, nonce 64..6f, no AAD. If an
+    // aes-gcm update ever changes the output, existing notes would stop
+    // decrypting; this test fails first.
+    const KAT_PLAINTEXT: &[u8] = b"Notas known-answer test";
+    const KAT_CIPHERTEXT: &str = "0674aa070ac93df0511531c5bb0b198a27b0267eee1f87";
+    const KAT_TAG: &str = "3cbd204377224d6205e2f927e089969c";
+
+    fn kat_key() -> Key<Aes256Gcm> {
+        let bytes: [u8; KEY_LEN] = std::array::from_fn(|i| i as u8);
+        Key::<Aes256Gcm>::from(bytes)
+    }
+
+    fn kat_data() -> EncryptedData {
+        let nonce: [u8; NONCE_LEN] = std::array::from_fn(|i| 100 + i as u8);
+        let mut tag = [0u8; TAG_LEN];
+        tag.copy_from_slice(&hex::decode(KAT_TAG).unwrap());
+        EncryptedData {
+            header: EncryptedHeader { salt: [0u8; SALT_LEN], nonce, tag },
+            ciphertext: hex::decode(KAT_CIPHERTEXT).unwrap(),
+        }
+    }
+
+    #[test]
+    fn aes_gcm_known_answer() {
+        assert_eq!(decrypt(&kat_key(), &kat_data()).unwrap(), KAT_PLAINTEXT);
+    }
+
+    #[test]
+    fn aes_gcm_rejects_tampering() {
+        let mut data = kat_data();
+        data.ciphertext[0] ^= 1;
+        assert!(decrypt(&kat_key(), &data).is_err());
+    }
+
+    #[test]
+    fn encrypt_decrypt_roundtrip_through_bytes() {
+        let salt = generate_salt();
+        let encrypted = encrypt(&kat_key(), &salt, KAT_PLAINTEXT).unwrap();
+        let parsed = EncryptedData::from_bytes(&encrypted.to_bytes()).unwrap();
+        assert_eq!(parsed.header.salt, salt);
+        assert_eq!(decrypt(&kat_key(), &parsed).unwrap(), KAT_PLAINTEXT);
+    }
+
+    #[test]
+    fn fill_random_is_random() {
+        let (mut a, mut b) = ([0u8; 32], [0u8; 32]);
+        fill_random(&mut a);
+        fill_random(&mut b);
+        assert_ne!(a, [0u8; 32]);
+        assert_ne!(a, b);
+    }
+}
