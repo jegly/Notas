@@ -1,0 +1,61 @@
+# Runs the tests and builds the .deb (./build-deb.sh) on every push to main and
+# every PR, including Dependabot's. Nothing is published from here; see
+# release.yml.
+#
+# Ubuntu 24.04 on purpose: the .deb declares no glibc minimum, so the build
+# system decides where the binary runs. Built on 24.04 it runs on 24.04+.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Test and build .deb
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            dpkg-dev pkg-config libgtk-4-dev libadwaita-1-dev
+          rustup update stable --no-self-update
+          rustup default stable
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-24.04-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cargo-24.04-
+
+      - name: Tests
+        run: cargo test --release
+
+      - name: Build .deb
+        run: ./build-deb.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: deb
+          path: notas_*_amd64.deb
+          if-no-files-found: error
+          retention-days: 14
