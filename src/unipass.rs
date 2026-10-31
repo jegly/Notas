@@ -480,14 +480,13 @@ pub const ASCII_SYMBOLS: &str = "!@#$%^&*()-_=+[]{};:,.<>/?";
 /// draws 32 bits and discards the incomplete final block so every index stays
 /// equally likely; taking `r % n` without that discard would bias the low indices.
 fn uniform_index(n: usize) -> usize {
-    use aes_gcm::aead::{rand_core::RngCore, OsRng};
     assert!(n > 0, "cannot sample from an empty pool");
     let n64 = n as u64;
     // Largest multiple of n that fits in u32's range.
     let limit = (1u64 << 32) / n64 * n64;
     let mut buf = [0u8; 4];
     loop {
-        OsRng.fill_bytes(&mut buf);
+        crate::core::crypto::fill_random(&mut buf);
         let r = u32::from_le_bytes(buf) as u64;
         if r < limit {
             return (r % n64) as usize;

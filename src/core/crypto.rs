@@ -1,12 +1,10 @@
 use aes_gcm::{
-    aead::{AeadInPlace, KeyInit, OsRng},
+    aead::{AeadInOut, KeyInit},
     Aes256Gcm, Nonce, Key, Tag,
 };
-use argon2::{
-    password_hash::rand_core::RngCore,
-    Argon2, Params, Algorithm, Version,
-};
+use argon2::{Argon2, Params, Algorithm, Version};
 use anyhow::{Result, anyhow};
+use rand::{rngs::SysRng, TryRng};
 use zeroize::Zeroize;
 
 use super::data::Argon2Params;
@@ -95,16 +93,27 @@ pub fn derive_key_with_params(password: &[u8], salt: &[u8; SALT_LEN], argon2_par
     Ok(key)
 }
 
+/// Fill `buf` from the operating system's random number generator.
+///
+/// The one source of randomness for salts, nonces and generated secrets.
+/// Panics if the OS cannot supply randomness: there is no safe fallback for
+/// key material, and this matches the old `OsRng::fill_bytes` behaviour.
+pub fn fill_random(buf: &mut [u8]) {
+    SysRng
+        .try_fill_bytes(buf)
+        .expect("operating system random number generator failed");
+}
+
 // Encryption function (salt is passed in, not regenerated)
 pub fn encrypt(key: &Key<Aes256Gcm>, salt: &[u8; SALT_LEN], plaintext: &[u8]) -> Result<EncryptedData> {
     let cipher = Aes256Gcm::new(key);
 
     let mut nonce_bytes = [0u8; NONCE_LEN];
-    OsRng.fill_bytes(&mut nonce_bytes);
-    let nonce = Nonce::from_slice(&nonce_bytes);
+    fill_random(&mut nonce_bytes);
+    let nonce = Nonce::from(nonce_bytes);
 
     let mut buffer = plaintext.to_vec();
-    let tag = cipher.encrypt_in_place_detached(nonce, b"", &mut buffer)
+    let tag = cipher.encrypt_inout_detached(&nonce, b"", buffer.as_mut_slice().into())
         .map_err(|e| anyhow!("Encryption failed: {}", e))?;
 
     let mut tag_bytes = [0u8; TAG_LEN];
@@ -119,12 +128,12 @@ pub fn encrypt(key: &Key<Aes256Gcm>, salt: &[u8; SALT_LEN], plaintext: &[u8]) ->
 // Decryption function
 pub fn decrypt(key: &Key<Aes256Gcm>, encrypted_data: &EncryptedData) -> Result<Vec<u8>> {
     let cipher = Aes256Gcm::new(key);
-    let nonce = Nonce::from_slice(&encrypted_data.header.nonce);
-    let tag = Tag::from_slice(&encrypted_data.header.tag);
+    let nonce = Nonce::from(encrypted_data.header.nonce);
+    let tag = Tag::from(encrypted_data.header.tag);
 
     let mut buffer = encrypted_data.ciphertext.clone();
-    
-    cipher.decrypt_in_place_detached(nonce, b"", &mut buffer, tag)
+
+    cipher.decrypt_inout_detached(&nonce, b"", buffer.as_mut_slice().into(), &tag)
         .map_err(|e| anyhow!("Decryption failed: {}", e))?;
 
     Ok(buffer)
@@ -133,7 +142,7 @@ pub fn decrypt(key: &Key<Aes256Gcm>, encrypted_data: &EncryptedData) -> Result<V
 // Helper to generate a new random salt
 pub fn generate_salt() -> [u8; SALT_LEN] {
     let mut salt = [0u8; SALT_LEN];
-    OsRng.fill_bytes(&mut salt);
+    fill_random(&mut salt);
     salt
 }
 

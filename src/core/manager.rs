@@ -537,7 +537,6 @@ impl CoreManager {
     /// AEAD-encrypted regardless, so this is defence-in-depth, not a guarantee.
     fn scrub_file(path: &PathBuf) {
         use std::io::Write;
-        use aes_gcm::aead::{rand_core::RngCore, OsRng};
         let Ok(meta) = fs::metadata(path) else { return };
         let len = meta.len();
         if len == 0 {
@@ -548,7 +547,7 @@ impl CoreManager {
             let mut remaining = len;
             while remaining > 0 {
                 let n = remaining.min(buf.len() as u64) as usize;
-                OsRng.fill_bytes(&mut buf[..n]);
+                super::crypto::fill_random(&mut buf[..n]);
                 if f.write_all(&buf[..n]).is_err() {
                     break;
                 }
