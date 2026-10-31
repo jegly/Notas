@@ -356,10 +356,19 @@ mod tests {
 
     /// The test binary calls neither `harden_process` nor `main`, so this checks
     /// the probe reads the kernel rather than echoing our own intentions.
+    /// The kernel's mode is read independently instead of assumed to be 0: a
+    /// container runtime (Docker in CI) installs its own seccomp filter, so the
+    /// test process can legitimately start in mode 2.
     #[test]
     fn probe_reflects_the_kernel_not_our_wishes() {
         let s = probe();
-        assert_eq!(s.seccomp_mode, 0, "no filter installed in the test binary");
+        let kernel_mode: u8 = std::fs::read_to_string("/proc/self/status")
+            .unwrap()
+            .lines()
+            .find_map(|l| l.strip_prefix("Seccomp:"))
+            .and_then(|v| v.trim().parse().ok())
+            .unwrap_or(0);
+        assert_eq!(s.seccomp_mode, kernel_mode, "probe must report the kernel's seccomp mode");
         assert!(matches!(s.seccomp, SeccompStatus::Failed(_)));
         assert!(s.dumpable, "test binary should still be dumpable");
     }

@@ -7,7 +7,7 @@
 //! instead of replacing the selection). Pure Rust, offline — no Python, no
 //! runtime dependencies, consistent with the existing "Transform selection" menu.
 
-use aes_gcm::aead::{rand_core::RngCore, Aead, OsRng};
+use aes_gcm::aead::Aead;
 use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
 use argon2::{Algorithm, Argon2, Params, Version};
 use base64::Engine as _;
@@ -225,13 +225,13 @@ fn derive_key(pass: &str, salt: &[u8]) -> Result<[u8; 32], String> {
 pub fn encrypt_text(plain: &str, pass: &str) -> Result<String, String> {
     let mut salt = [0u8; 16];
     let mut nonce = [0u8; 12];
-    OsRng.fill_bytes(&mut salt);
-    OsRng.fill_bytes(&mut nonce);
+    crate::core::crypto::fill_random(&mut salt);
+    crate::core::crypto::fill_random(&mut nonce);
 
     let mut key = derive_key(pass, &salt)?;
     let cipher = Aes256Gcm::new_from_slice(&key).map_err(|e| e.to_string())?;
     let ct = cipher
-        .encrypt(Nonce::from_slice(&nonce), plain.as_bytes())
+        .encrypt(&Nonce::from(nonce), plain.as_bytes())
         .map_err(|_| "Encryption failed".to_string())?;
     key.zeroize();
 
@@ -270,10 +270,12 @@ pub fn decrypt_text(envelope: &str, pass: &str) -> Result<String, String> {
     let nonce = &blob[21..33];
     let ct = &blob[33..];
 
+    let nonce = Nonce::try_from(nonce).map_err(|_| "Not a Notas-encrypted block".to_string())?;
+
     let mut key = derive_key(pass, salt)?;
     let cipher = Aes256Gcm::new_from_slice(&key).map_err(|e| e.to_string())?;
     let pt = cipher
-        .decrypt(Nonce::from_slice(nonce), ct)
+        .decrypt(&nonce, ct)
         .map_err(|_| "Decryption failed — wrong passphrase or corrupted data".to_string());
     key.zeroize();
     let pt = pt?;

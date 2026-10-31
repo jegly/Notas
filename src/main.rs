@@ -2749,14 +2749,13 @@ const PASSPHRASE_WORDS: &[&str] = &[
 
 /// Generate a Title-Case hyphenated passphrase of `n` words (OS-random, rejection-sampled).
 fn gen_passphrase(n: usize) -> String {
-    use aes_gcm::aead::{rand_core::RngCore, OsRng};
     let words = PASSPHRASE_WORDS;
     let len = words.len();
     let limit = 256usize - (256usize % len);
     let mut chosen: Vec<String> = Vec::with_capacity(n);
     let mut buf = [0u8; 1];
     while chosen.len() < n {
-        OsRng.fill_bytes(&mut buf);
+        crate::core::crypto::fill_random(&mut buf);
         let b = buf[0] as usize;
         if b < limit {
             let w = words[b % len];
@@ -2771,11 +2770,10 @@ fn gen_passphrase(n: usize) -> String {
 
 /// A numeric PIN of `len` digits (OS-random, unbiased).
 fn gen_pin(len: usize) -> String {
-    use aes_gcm::aead::{rand_core::RngCore, OsRng};
     let mut out = String::with_capacity(len);
     let mut buf = [0u8; 1];
     while out.len() < len {
-        OsRng.fill_bytes(&mut buf);
+        crate::core::crypto::fill_random(&mut buf);
         if buf[0] < 250 {
             out.push((b'0' + (buf[0] % 10)) as char);
         }
@@ -2785,9 +2783,8 @@ fn gen_pin(len: usize) -> String {
 
 /// A random v4 UUID.
 fn gen_uuid_v4() -> String {
-    use aes_gcm::aead::{rand_core::RngCore, OsRng};
     let mut b = [0u8; 16];
-    OsRng.fill_bytes(&mut b);
+    crate::core::crypto::fill_random(&mut b);
     b[6] = (b[6] & 0x0f) | 0x40; // version 4
     b[8] = (b[8] & 0x3f) | 0x80; // variant 1
     format!(
@@ -2798,9 +2795,8 @@ fn gen_uuid_v4() -> String {
 
 /// A random lowercase-hex token of `nbytes` bytes (so 2×nbytes hex chars).
 fn gen_hex_token(nbytes: usize) -> String {
-    use aes_gcm::aead::{rand_core::RngCore, OsRng};
     let mut v = vec![0u8; nbytes];
-    OsRng.fill_bytes(&mut v);
+    crate::core::crypto::fill_random(&mut v);
     v.iter().map(|b| format!("{:02x}", b)).collect()
 }
 

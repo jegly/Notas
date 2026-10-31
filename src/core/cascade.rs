@@ -11,7 +11,6 @@
 //! passphrase. Legacy single-AES-GCM vaults (no magic) are handled by
 //! [`super::crypto`]; [`is_cascade`] distinguishes the two.
 
-use aes_gcm::aead::{rand_core::RngCore, OsRng};
 use anyhow::{anyhow, Result};
 
 use tesseract_core::{
@@ -41,7 +40,7 @@ struct OsEntropy;
 
 impl EntropySource for OsEntropy {
     fn fill(&mut self, buf: &mut [u8]) {
-        OsRng.fill_bytes(buf);
+        super::crypto::fill_random(buf);
     }
 }
 
@@ -53,7 +52,7 @@ pub fn is_cascade(bytes: &[u8]) -> bool {
 /// Build cascade KDF params (Argon2id) from Notas' settings, with a fresh salt.
 fn kdf_params(params: &Argon2Params) -> KdfParams {
     let mut salt = [0u8; 32];
-    OsRng.fill_bytes(&mut salt);
+    super::crypto::fill_random(&mut salt);
     KdfParams::Argon2id {
         m_kib: params.memory_cost,
         t_cost: params.time_cost,

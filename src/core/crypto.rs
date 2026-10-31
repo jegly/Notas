@@ -1,12 +1,10 @@
 use aes_gcm::{
-    aead::{AeadInPlace, KeyInit, OsRng},
+    aead::{AeadInOut, KeyInit},
     Aes256Gcm, Nonce, Key, Tag,
 };
-use argon2::{
-    password_hash::rand_core::RngCore,
-    Argon2, Params, Algorithm, Version,
-};
+use argon2::{Argon2, Params, Algorithm, Version};
 use anyhow::{Result, anyhow};
+use rand::{rngs::SysRng, TryRng};
 use zeroize::Zeroize;
 
 use super::data::Argon2Params;
@@ -95,16 +93,27 @@ pub fn derive_key_with_params(password: &[u8], salt: &[u8; SALT_LEN], argon2_par
     Ok(key)
 }
 
+/// Fill `buf` from the operating system's random number generator.
+///
+/// The one source of randomness for salts, nonces and generated secrets.
+/// Panics if the OS cannot supply randomness: there is no safe fallback for
+/// key material, and this matches the old `OsRng::fill_bytes` behaviour.
+pub fn fill_random(buf: &mut [u8]) {
+    SysRng
+        .try_fill_bytes(buf)
+        .expect("operating system random number generator failed");
+}
+
 // Encryption function (salt is passed in, not regenerated)
 pub fn encrypt(key: &Key<Aes256Gcm>, salt: &[u8; SALT_LEN], plaintext: &[u8]) -> Result<EncryptedData> {
     let cipher = Aes256Gcm::new(key);
 
     let mut nonce_bytes = [0u8; NONCE_LEN];
-    OsRng.fill_bytes(&mut nonce_bytes);
-    let nonce = Nonce::from_slice(&nonce_bytes);
+    fill_random(&mut nonce_bytes);
+    let nonce = Nonce::from(nonce_bytes);
 
     let mut buffer = plaintext.to_vec();
-    let tag = cipher.encrypt_in_place_detached(nonce, b"", &mut buffer)
+    let tag = cipher.encrypt_inout_detached(&nonce, b"", buffer.as_mut_slice().into())
         .map_err(|e| anyhow!("Encryption failed: {}", e))?;
 
     let mut tag_bytes = [0u8; TAG_LEN];
@@ -119,12 +128,12 @@ pub fn encrypt(key: &Key<Aes256Gcm>, salt: &[u8; SALT_LEN], plaintext: &[u8]) ->
 // Decryption function
 pub fn decrypt(key: &Key<Aes256Gcm>, encrypted_data: &EncryptedData) -> Result<Vec<u8>> {
     let cipher = Aes256Gcm::new(key);
-    let nonce = Nonce::from_slice(&encrypted_data.header.nonce);
-    let tag = Tag::from_slice(&encrypted_data.header.tag);
+    let nonce = Nonce::from(encrypted_data.header.nonce);
+    let tag = Tag::from(encrypted_data.header.tag);
 
     let mut buffer = encrypted_data.ciphertext.clone();
-    
-    cipher.decrypt_in_place_detached(nonce, b"", &mut buffer, tag)
+
+    cipher.decrypt_inout_detached(&nonce, b"", buffer.as_mut_slice().into(), &tag)
         .map_err(|e| anyhow!("Decryption failed: {}", e))?;
 
     Ok(buffer)
@@ -133,7 +142,7 @@ pub fn decrypt(key: &Key<Aes256Gcm>, encrypted_data: &EncryptedData) -> Result<V
 // Helper to generate a new random salt
 pub fn generate_salt() -> [u8; SALT_LEN] {
     let mut salt = [0u8; SALT_LEN];
-    OsRng.fill_bytes(&mut salt);
+    fill_random(&mut salt);
     salt
 }
 
@@ -150,3 +159,61 @@ pub fn generate_test_key_with_params(password: &[u8], argon2_params: &Argon2Para
     Ok((key, salt))
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // AES-256-GCM vector generated independently of RustCrypto (Python
+    // `cryptography`, i.e. OpenSSL): key 00..1f, nonce 64..6f, no AAD. If an
+    // aes-gcm update ever changes the output, existing notes would stop
+    // decrypting; this test fails first.
+    const KAT_PLAINTEXT: &[u8] = b"Notas known-answer test";
+    const KAT_CIPHERTEXT: &str = "0674aa070ac93df0511531c5bb0b198a27b0267eee1f87";
+    const KAT_TAG: &str = "3cbd204377224d6205e2f927e089969c";
+
+    fn kat_key() -> Key<Aes256Gcm> {
+        let bytes: [u8; KEY_LEN] = std::array::from_fn(|i| i as u8);
+        Key::<Aes256Gcm>::from(bytes)
+    }
+
+    fn kat_data() -> EncryptedData {
+        let nonce: [u8; NONCE_LEN] = std::array::from_fn(|i| 100 + i as u8);
+        let mut tag = [0u8; TAG_LEN];
+        tag.copy_from_slice(&hex::decode(KAT_TAG).unwrap());
+        EncryptedData {
+            header: EncryptedHeader { salt: [0u8; SALT_LEN], nonce, tag },
+            ciphertext: hex::decode(KAT_CIPHERTEXT).unwrap(),
+        }
+    }
+
+    #[test]
+    fn aes_gcm_known_answer() {
+        assert_eq!(decrypt(&kat_key(), &kat_data()).unwrap(), KAT_PLAINTEXT);
+    }
+
+    #[test]
+    fn aes_gcm_rejects_tampering() {
+        let mut data = kat_data();
+        data.ciphertext[0] ^= 1;
+        assert!(decrypt(&kat_key(), &data).is_err());
+    }
+
+    #[test]
+    fn encrypt_decrypt_roundtrip_through_bytes() {
+        let salt = generate_salt();
+        let encrypted = encrypt(&kat_key(), &salt, KAT_PLAINTEXT).unwrap();
+        let parsed = EncryptedData::from_bytes(&encrypted.to_bytes()).unwrap();
+        assert_eq!(parsed.header.salt, salt);
+        assert_eq!(decrypt(&kat_key(), &parsed).unwrap(), KAT_PLAINTEXT);
+    }
+
+    #[test]
+    fn fill_random_is_random() {
+        let (mut a, mut b) = ([0u8; 32], [0u8; 32]);
+        fill_random(&mut a);
+        fill_random(&mut b);
+        assert_ne!(a, [0u8; 32]);
+        assert_ne!(a, b);
+    }
+}
