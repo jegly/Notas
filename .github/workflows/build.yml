@@ -1,0 +1,66 @@
+# Runs the tests and builds the .deb (./build-deb.sh) on every push to main and
+# every PR, including Dependabot's. Nothing is published from here; see release.yml.
+#
+# Built inside the latest Ubuntu (ubuntu:latest): the .deb's library minimums
+# come from the build system (dpkg-shlibdeps), so they track the newest release.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Test and build .deb
+    runs-on: ubuntu-latest
+    container: ubuntu:latest
+    defaults:
+      run:
+        # Container jobs default to sh; the steps use bash.
+        shell: bash
+    timeout-minutes: 60
+    steps:
+      - name: Install build tools
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update -qq
+          apt-get install -y --no-install-recommends \
+            ca-certificates curl git build-essential pkg-config dpkg-dev binutils \
+            libgtk-4-dev libadwaita-1-dev
+          # Latest stable Rust.
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - uses: actions/checkout@v7
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-ubuntu-latest-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cargo-ubuntu-latest-
+
+      - name: Tests
+        run: cargo test --release
+
+      - name: Build .deb
+        run: ./build-deb.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: deb
+          path: notas_*_amd64.deb
+          if-no-files-found: error
+          retention-days: 14

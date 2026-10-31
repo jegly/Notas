@@ -49,7 +49,9 @@ ksni = { version = "0.3", features = ["blocking"] }
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-bincode = "3.0"
+# 1.x on purpose: bincode 3.0.0 is a deliberate non-compiling release (the
+# project has ended), and 1.x is the format saved notes are stored in.
+bincode = "1.3"
 # Cryptography
 argon2 = "0.6"
 aes-gcm = "0.11"

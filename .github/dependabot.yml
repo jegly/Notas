@@ -11,3 +11,16 @@ updates:
       - "rust"
     commit-message:
       prefix: "deps"
+    ignore:
+      # bincode 3.0.0 is a deliberate non-compiling release (the project has
+      # ended); notes are stored in the bincode 1.x format. 1.x updates still come.
+      - dependency-name: "bincode"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns: ["*"]

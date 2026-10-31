@@ -36,7 +36,7 @@ jobs:
     steps:
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Execute Codacy Analysis CLI and generate a SARIF output with the security issues identified during the analysis
       - name: Run Codacy Analysis CLI
@@ -55,7 +55,20 @@ jobs:
           max-allowed-issues: 2147483647
 
       # Upload the SARIF file generated in the previous step
+      # Codacy's local tools do not cover Rust, so for this repo the SARIF
+      # often has no runs, and GitHub rejects an empty upload. Only upload
+      # when there is something to upload.
+      - name: Check SARIF has results
+        id: sarif
+        run: |
+          runs=$(jq '.runs | length' results.sarif 2>/dev/null || echo 0)
+          echo "runs=$runs" >> "$GITHUB_OUTPUT"
+          if [ "$runs" -eq 0 ]; then
+            echo "::notice::Codacy produced no analysis runs (nothing in this code its tools cover); skipping the upload."
+          fi
+
       - name: Upload SARIF results file
-        uses: github/codeql-action/upload-sarif@v3
+        if: steps.sarif.outputs.runs != '0'
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: results.sarif

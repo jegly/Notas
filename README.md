@@ -57,7 +57,17 @@ sudo snap install notas
 sudo dpkg -i notas_3.2.1_amd64.deb 
 ```
 
-`notas_3.2.1_amd64.deb` sha256: `5266070a1926a86ed3e6647c2f43dca209af2261b90e29da61e67a28c8d3a048`
+<!-- release-checksums:start -->
+| File | SHA-256 |
+|---|---|
+| `notas_3.2.1_amd64.deb` | *sha256:5266070a1926a86ed3e6647c2f43dca209af2261b90e29da61e67a28c8d3a048* |
+
+Verify a download:
+
+```bash
+sha256sum notas_3.2.1_amd64.deb
+```
+<!-- release-checksums:end -->
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐

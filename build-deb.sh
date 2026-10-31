@@ -141,6 +141,16 @@ INCLUDE_FONT=true
 # Calculate installed size (in KB)
 INSTALLED_SIZE=$(du -sk "$PKG_DIR" | cut -f1)
 
+# The shared libraries the binary needs, with the minimum versions of the
+# system it was built on (dpkg-shlibdeps, part of dpkg-dev). Without this the
+# package would install on an older Ubuntu whose glibc cannot run it.
+SHLIBS_TMP=$(mktemp -d)
+mkdir -p "$SHLIBS_TMP/debian"
+printf 'Source: notas\n\nPackage: notas\nArchitecture: any\n' > "$SHLIBS_TMP/debian/control"
+SHLIBS_DEPENDS=$(cd "$SHLIBS_TMP" && dpkg-shlibdeps -O "$OLDPWD/$PKG_DIR/usr/bin/notas" 2>/dev/null | sed 's/^shlibs:Depends=//') || true
+rm -rf "$SHLIBS_TMP"
+DEPENDS="${SHLIBS_DEPENDS:-libgtk-4-1, libadwaita-1-0}"
+
 echo ""
 echo "📝 Step 4: Creating control file..."
 
@@ -152,7 +162,7 @@ Section: utils
 Priority: optional
 Architecture: ${ARCH}
 Installed-Size: ${INSTALLED_SIZE}
-Depends: libgtk-4-1, libadwaita-1-0
+Depends: ${DEPENDS}
 Maintainer: Jegly <jjjegly@gmail.com>
 Homepage: https://github.com/jegly/notas
 Description: Secure encrypted notes application
