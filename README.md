@@ -54,21 +54,21 @@ sudo snap install notas
 ### Debian package
 
 ```bash
-sudo dpkg -i notas_3.2.2_amd64.deb 
+sudo dpkg -i notas_3.2.3_amd64.deb 
 ```
 
 <!-- release-checksums:start -->
 | File | SHA-256 |
 |---|---|
-| `notas_3.2.2_amd64.deb` | *sha256:c12cd1a061faa15430743c7e35184047c36c9cd7077076b70012e5f36169c0c8* |
+| `notas_3.2.3_amd64.deb` | *sha256:ca2d71a505880de4fa86ab877ea5d5f7956e28cf8bb4fe8731545236f5fe2f76* |
 
 Verify a download:
 
 ```bash
-sha256sum notas_3.2.2_amd64.deb
+sha256sum notas_3.2.3_amd64.deb
 ```
 
-The [build attestation](https://github.com/jegly/Notas/attestations) shows it was built by this repository's release workflow (with the GitHub CLI: `gh attestation verify notas_3.2.2_amd64.deb --repo jegly/Notas`).
+The [build attestation](https://github.com/jegly/Notas/attestations) shows it was built by this repository's release workflow (with the GitHub CLI: `gh attestation verify notas_3.2.3_amd64.deb --repo jegly/Notas`).
 <!-- release-checksums:end -->
 
 ```
